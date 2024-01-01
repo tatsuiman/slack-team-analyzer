@@ -63,13 +63,14 @@ pip install -r requirements.txt
 ## 使い方
 
 はじめに[Slack Apps](https://api.slack.com/apps/)を作成し以下の権限を追加します。
-## SLACK_BOT_TOKEN
-* channels:history
-* users:read
+トークンはそれぞれ`SLACK_BOT_TOKEN`と`SLACK_USER_TOKEN`という名前で設定します。  
+* SLACK_BOT_TOKEN
+    * channels:history
+    * users:read
 
-## SLACK_USER_TOKEN
-* search:read
-* channels:history
+* SLACK_USER_TOKEN
+    * search:read
+    * channels:history
 
 ### チャンネルを分析する
 チャンネルIDを指定し、チャンネルのメッセージをダンプします。
