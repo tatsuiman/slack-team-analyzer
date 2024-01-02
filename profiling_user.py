@@ -9,7 +9,7 @@ import csv
 threads = get_threads(sys.argv[1])
 user_id = sys.argv[2]
 real_name = get_real_name(user_id)
-output_csv = "user_profile.csv"
+output_csv = sys.argv[3]
 
 markdown = thread_to_markdown(threads)
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。

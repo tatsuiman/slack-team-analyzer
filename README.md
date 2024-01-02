@@ -102,7 +102,7 @@ python dump_user.py <メンバーID>
 
 会話の分析
 ```bash
-python analysis_messages.py user_messages.jsonl
+python analysis_messages.py user_<メンバーID>_messages.jsonl
 ```
 
 ### チャンネルの人間関係図を作成する
@@ -110,7 +110,8 @@ python analysis_messages.py user_messages.jsonl
 python network_user.py channel_messages.jsonl
 ```
 
-### 特定個人のプロファイリング
+### メンバーのプロファイリング
+メンバーのプロファイリング結果をcsvに保存します。メンバーIDが重複する場合は新しい値で更新されます。  
 以下の観点で特定個人のプロファイリングを行います。
 * コミュニケーションスタイル: 言葉遣い、専門用語の使用頻度、疑問形式の使用など、コミュニケーションスタイルの特徴を分析します。
 * 関与するトピックと領域: 個人がどのようなトピックや専門領域に関与しているか、またその専門性がどのように表れているかを評価します。
@@ -121,14 +122,9 @@ python network_user.py channel_messages.jsonl
 
 使用例
 ```bash
-python profiling_user.py user_messages.jsonl
-
-communication_style: 対話形式で要求されたタスクに基づいて情報を提供し、コマンドに従ってアクションを実行するスタイルです。専門用語の使用は少なく、わかりやすい言葉でレスポンスしています。
-involved_topics_and_areas: データ分析、グラフ作成、プログラミング、マルウェア分析、バイアス分析など、テクノロジーに関する幅広いトピックに関与しています。
-diversity_of_opinions_and_conflict: 異なる意見やアイデアを受け入れ、要求に応じた情報提供や解決策の提示に努めています。対立する意見や状況に対しては、事実に基づいて冷静かつ適切に対応しています。
-impact_on_decisions: 情報提供や解析を通じて他者の意思決定をサポートし、データに基づいた洞察を提供することで影響を与えています。
-feedback_and_interaction: 要求された情報に対して迅速にフィードバックを提供し、質問や要請に対する反応を示しています。相互作用は主に情報提供と問題解決に焦点を当てています。
-signs_of_cognitive_bias: 特定の情報や課題に対して一貫性のあるアプローチを取っており、バイアスの兆候は見受けられません。提供されたデータや情報に基づいて客観的な分析を行い、冷静な対応を心がけています。
+python profiling_user.py user_<メンバーID 1>_messages.jsonl <メンバーID 1> output.csv
+python profiling_user.py user_<メンバーID 2>_messages.jsonl <メンバーID 2> output.csv
+python profiling_user.py user_<メンバーID 3>_messages.jsonl <メンバーID 3> output.csv
 ```
 
 ### 特定のスレッドを分析する
