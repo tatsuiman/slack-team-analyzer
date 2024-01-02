@@ -7,7 +7,9 @@ from slack_sdk.errors import SlackApiError
 
 # SlackのトークンとユーザIDを設定
 slack_token = os.getenv("SLACK_USER_TOKEN")
-user_id = f"<@{sys.argv[1]}>"
+user = sys.argv[1]
+user_id = f"<@{user}>"
+dump_file = f"user_{user}_messages.jsonl"
 
 # Slackクライアントの初期化
 client = WebClient(token=slack_token)
@@ -47,7 +49,6 @@ def fetch_all_messages(user_id):
 # すべてのメッセージを取得
 all_messages = fetch_all_messages(user_id)
 
-dump_file = "user_messages.jsonl"
 
 with open(dump_file, "w") as f:
     for message in all_messages:

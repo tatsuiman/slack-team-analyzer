@@ -1,8 +1,16 @@
+import os
 import sys
+import pandas as pd
 from analysis import get_threads, thread_to_markdown
+from slacklib import get_real_name
 from ai import generate_json
 
+import csv
 threads = get_threads(sys.argv[1])
+user_id = sys.argv[2]
+real_name = get_real_name(user_id)
+output_csv = "user_profile.csv"
+
 markdown = thread_to_markdown(threads)
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 valueは必ず日本語で出力してください。
@@ -19,3 +27,14 @@ valueは必ず日本語で出力してください。
 resp = generate_json(markdown, system_prompt)
 for key, value in resp.items():
     print(f"{key}: {value}")
+
+data = {'user_id': [user_id], 'real_name': [real_name], **{k: [v] for k, v in resp.items()}}
+df_new = pd.DataFrame(data)
+
+if os.path.isfile(output_csv):
+    df_old = pd.read_csv(output_csv)
+    df_combined = pd.concat([df_old, df_new]).drop_duplicates(subset='user_id', keep='last')
+else:
+    df_combined = df_new
+
+df_combined.to_csv(output_csv, index=False)

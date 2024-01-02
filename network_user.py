@@ -1,20 +1,12 @@
-import os
-
 import json
 import sys
-from slack_sdk import WebClient
 from graphviz import Digraph
+from slacklib import get_real_name
 
 # Load the data from the JSONL file
 file_path = sys.argv[1]
 # Initialize a dictionary to store user interactions
 user_interactions = {}
-
-# Slackクライアントの初期化
-def get_real_name(user_id):
-    slack_token = os.getenv("SLACK_BOT_TOKEN")
-    client = WebClient(token=slack_token)
-    return client.users_info(user=user_id)['user']['real_name']
 
 # Process each line in the JSONL file
 with open(file_path, 'r') as file:
