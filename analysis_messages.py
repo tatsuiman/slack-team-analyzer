@@ -6,14 +6,17 @@ from ai import generate_json
 threads = get_threads(sys.argv[1])
 
 summary = get_thread_summary(threads)
-# Print the summary
-for key, value in summary.items():
-    print(f"{key}: {value}")
-
 markdown = thread_to_markdown(threads)
+
+for key, value in summary.items():
+    text = f"{key}: {value}"
+    markdown += f"\n{text}"
+    print(text)
+
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 
 {
+    "response_time": "各メンバーがメッセージに応答するまでの時間に関する分析結果を記入します。",
     "message_clarity": "メッセージがどれだけ明確かどうかを記入します。",
     "participation_balance": "すべてのメンバーが議論に均等に参加しているかどうかを記入します。",
     "opinion_diversity": "チームメンバーの意見の多様性を記入します。",
