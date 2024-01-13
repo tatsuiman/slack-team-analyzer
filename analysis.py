@@ -22,7 +22,6 @@ def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
         df['ts'] = df['ts'].apply(lambda x: datetime.fromtimestamp(float(x)))
         if 'user' in df.columns:
             if user_id is not None:
-                df['user'] = df['user'].apply(lambda x: f"<@{x}>")
                 df = df[df['user'] == user_id]
             df['text'] = df['text'].apply(lambda x: html.unescape(x))
             # yaraの結果を格納する新しい列を作成

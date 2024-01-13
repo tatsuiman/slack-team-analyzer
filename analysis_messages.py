@@ -13,11 +13,13 @@ for key, value in summary.items():
     markdown += f"{key}: {value}\n"
 
 for user_id in summary["ユーザー別総メッセージ数"].keys():
+    user_id = user_id.replace("<@", "").replace(">", "")
     yara_match = analyze_yara(threads, user_id)
     markdown += f"## {user_id}について\n"
     for key, value in yara_match.items():
         markdown += f"* {key}: {value}\n"
 
+#print(markdown)
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 
 {
