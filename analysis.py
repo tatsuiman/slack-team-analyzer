@@ -181,10 +181,13 @@ def get_message_summary(messages):
     return summary
 
 
-def thread_to_markdown(threads):
+def thread_to_markdown(threads, thread_size=20):
     threads_formatted = ""
     # Format the messages in Markdown style
     for thread_ts, messages in threads.items():
+        # 短いスレッドはバイアスが特定できないのでスキップ
+        if len(messages) < thread_size:
+            continue
         threads_formatted += f"## thread_ts: {thread_ts}\n"
         for msg in messages:
             user = msg.get('user', '')
