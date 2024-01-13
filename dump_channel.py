@@ -26,23 +26,20 @@ def check_messages(matches, days):
             messages.append(message)
     return messages
 
+@retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
 def fetch_channel_messages(channel_id, days):
     messages = []
-    try:
-        # 初回のAPI呼び出し
-        response = client.conversations_history(channel=channel_id, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+    # 初回のAPI呼び出し
+    response = client.conversations_history(channel=channel_id, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+    messages.extend(check_messages(response['messages'], days))
+
+    # ページネーションを使用して残りのメッセージを取得
+    while response["has_more"]:
+        cursor = response['response_metadata']['next_cursor']
+        response = client.conversations_history(channel=channel_id, cursor=cursor, oldest=(datetime.now() - timedelta(days=days)).timestamp())
         messages.extend(check_messages(response['messages'], days))
 
-        # ページネーションを使用して残りのメッセージを取得
-        while response["has_more"]:
-            cursor = response['response_metadata']['next_cursor']
-            response = client.conversations_history(channel=channel_id, cursor=cursor, oldest=(datetime.now() - timedelta(days=days)).timestamp())
-            messages.extend(check_messages(response['messages'], days))
-
-        return messages
-    except SlackApiError as e:
-        print(f"Error fetching conversations: {e}")
-
+    return messages
 
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
 def fetch_replies(channel_id, thread_ts):

@@ -47,27 +47,24 @@ def check_messages(matches, days):
             messages.append(message)
     return messages
 
+@retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
 def fetch_user_messages(user_id, days):
     messages = []
-    try:
-        # 初回のAPI呼び出し
-        response = client.search_messages(query=f"from:{user_id}", count=100, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+    # 初回のAPI呼び出し
+    response = client.search_messages(query=f"from:{user_id}", count=100, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+    matches = response["messages"]["matches"]
+    if len(matches) == 0:
+        return messages
+    messages.extend(check_messages(matches, days))
+    # ページネーションを使用して残りのメッセージを取得
+    while response["messages"]["paging"]["pages"] > response["messages"]["paging"]["page"]:
+        response = client.search_messages(query=f"from:{user_id}", page=response["messages"]["paging"]["page"] + 1, count=100, oldest=(datetime.now() - timedelta(days=days)).timestamp())
         matches = response["messages"]["matches"]
         if len(matches) == 0:
-            return messages
+            break
         messages.extend(check_messages(matches, days))
-        # ページネーションを使用して残りのメッセージを取得
-        while response["messages"]["paging"]["pages"] > response["messages"]["paging"]["page"]:
-            response = client.search_messages(query=f"from:{user_id}", page=response["messages"]["paging"]["page"] + 1, count=100, oldest=(datetime.now() - timedelta(days=days)).timestamp())
-            matches = response["messages"]["matches"]
-            if len(matches) == 0:
-                break
-            messages.extend(check_messages(matches, days))
 
-        return messages
-    except SlackApiError as e:
-        print(f"Error fetching conversations: {e}")
-
+    return messages
 
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
 def fetch_replies(channel_id, thread_ts):
