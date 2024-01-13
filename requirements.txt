@@ -2,3 +2,5 @@ pygraphviz
 slack_sdk
 openai
 langchain
+tqdm
+retry

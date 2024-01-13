@@ -1,5 +1,5 @@
 import sys
-from analysis import get_thread_summary, get_threads, thread_to_markdown
+from analysis import get_thread_summary, get_threads, thread_to_markdown, truncate_strings
 from ai import generate_json
 
 
@@ -12,6 +12,8 @@ for key, value in summary.items():
     text = f"{key}: {value}"
     markdown += f"\n{text}"
     print(text)
+
+markdown = truncate_strings(markdown, max_tokens=64000)
 
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 

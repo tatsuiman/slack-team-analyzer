@@ -1,5 +1,6 @@
 import json
 import html
+import tiktoken
 import pandas as pd
 from datetime import datetime
 
@@ -16,19 +17,27 @@ def analyze_thread(thread_messages):
     df['ts'] = df['ts'].apply(lambda x: datetime.fromtimestamp(float(x)))
 
     # Initialize dictionaries for message counts and response times
-    df['user'] = df['user'].apply(lambda x: f"<@{x}>")
-    user_message_counts = df['user'].value_counts().to_dict()
+    if 'user' in df.columns:
+        df['user'] = df['user'].apply(lambda x: f"<@{x}>")
+        user_message_counts = df['user'].value_counts().to_dict()
+    else:
+        return {
+            'user_message_counts': {},
+            'avg_response_times': {},
+            'conversation_duration': 0,
+            'total_messages': 0
+        }
     response_times = {}
 
     # Iterate over messages
     for i, msg in df.iterrows():
-        user = msg['user']
+        user = msg['user'] if 'user' in msg else None
         msg_time = msg['ts']
 
         # Find the next message by a different user
         for j in range(i+1, len(df)):
             next_msg = df.iloc[j]
-            next_user = next_msg['user']
+            next_user = next_msg['user'] if 'user' in next_msg else None
             next_msg_time = next_msg['ts']
 
             if user != next_user:
@@ -36,7 +45,8 @@ def analyze_thread(thread_messages):
                 time_diff = (next_msg_time - msg_time).total_seconds() / 60
 
                 # Update response times in both directions
-                response_times.setdefault(f'{user} -> {next_user}', []).append(time_diff)
+                if user and next_user:
+                    response_times.setdefault(f'{user} -> {next_user}', []).append(time_diff)
                 break
 
     # Calculate average response times for each user pair
@@ -155,3 +165,9 @@ def get_threads(file_path):
                     threads[thread_ts] = []
                 threads[thread_ts].append(message)
     return threads
+
+def truncate_strings(text, max_tokens=64000):
+    enc = tiktoken.encoding_for_model("gpt-4")
+    encode_strings = enc.encode(text, allowed_special="all")
+    encode_strings = encode_strings[:max_tokens]
+    return enc.decode(encode_strings)
