@@ -11,6 +11,7 @@ user_id = sys.argv[2]
 real_name = get_real_name(user_id)
 summary = get_thread_summary(threads)
 output_csv = sys.argv[3]
+print(real_name, user_id)
 
 markdown = thread_to_markdown(threads)
 markdown = truncate_strings(markdown, max_tokens=64000)
