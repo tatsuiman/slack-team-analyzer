@@ -11,4 +11,8 @@ for user in list_users()['members']:
     real_name = user["real_name"]
     thread_ts_cache = set()
     dump_file = f"user_{user['id']}_messages.jsonl"
-    dump(user_id, real_name, days, dump_file)
+    try:
+        dump(user_id, real_name, days, dump_file)
+    except Exception as e:
+        print(f"Error: {user_id} {real_name}")
+        print(e)

@@ -26,19 +26,26 @@ def check_messages(matches, days):
             messages.append(message)
     return messages
 
+
+@retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
+def _fetch_channel_messages(channel_id, cursor, days):
+    return client.conversations_history(channel=channel_id, cursor=cursor, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
 def fetch_channel_messages(channel_id, days):
     messages = []
     # 初回のAPI呼び出し
-    response = client.conversations_history(channel=channel_id, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+    response = _fetch_channel_messages(channel_id, cursor=None, days=days)
     messages.extend(check_messages(response['messages'], days))
+    pbar = tqdm.tqdm(total=0)
 
     # ページネーションを使用して残りのメッセージを取得
     while response["has_more"]:
         cursor = response['response_metadata']['next_cursor']
-        response = client.conversations_history(channel=channel_id, cursor=cursor, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+        response = _fetch_channel_messages(channel_id, cursor, days)
         messages.extend(check_messages(response['messages'], days))
-
+        pbar.update(1)
+    pbar.close()
     return messages
 
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
