@@ -1,5 +1,5 @@
 import sys
-from analysis import get_thread_summary, get_threads, thread_to_markdown, truncate_strings
+from analysis import get_thread_summary, get_threads, thread_to_markdown, truncate_strings, analyze_yara
 from ai import generate_json
 
 
@@ -7,13 +7,16 @@ threads = get_threads(sys.argv[1])
 
 summary = get_thread_summary(threads)
 markdown = thread_to_markdown(threads)
+markdown = truncate_strings(markdown, max_tokens=64000)
 
 for key, value in summary.items():
-    text = f"{key}: {value}"
-    markdown += f"\n{text}"
-    print(text)
+    markdown += f"{key}: {value}\n"
 
-markdown = truncate_strings(markdown, max_tokens=64000)
+for user_id in summary["ユーザー別総メッセージ数"].keys():
+    yara_match = analyze_yara(threads, user_id)
+    markdown += f"## {user_id}について\n"
+    for key, value in yara_match.items():
+        markdown += f"* {key}: {value}\n"
 
 system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 

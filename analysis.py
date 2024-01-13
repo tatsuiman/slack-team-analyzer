@@ -1,5 +1,6 @@
 import json
 import html
+import yara
 import tiktoken
 import pandas as pd
 from datetime import datetime
@@ -7,6 +8,48 @@ from datetime import datetime
 # Function to parse timestamp
 def parse_timestamp(ts):
     return datetime.fromtimestamp(float(ts))
+
+def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
+    # yara ルールを事前にコンパイル
+    rules = yara.compile(filepath=rules_file)
+    rule_counts = {}
+    role_counts = {}
+    category_counts = {}
+    for thread_ts, thread_messages in threads.items():
+        if not thread_messages:
+            continue
+        df = pd.DataFrame(thread_messages)
+        df['ts'] = df['ts'].apply(lambda x: datetime.fromtimestamp(float(x)))
+        if 'user' in df.columns:
+            if user_id is not None:
+                df['user'] = df['user'].apply(lambda x: f"<@{x}>")
+                df = df[df['user'] == user_id]
+            df['text'] = df['text'].apply(lambda x: html.unescape(x))
+            # yaraの結果を格納する新しい列を作成
+            df['yara_matches'] = df['text'].apply(lambda x: rules.match(data=x))
+            # マッチしたルールの種類と頻度をカウント
+            for matches in df['yara_matches']:
+                for match in matches:
+                    rule_name = match.rule
+                    if rule_name in rule_counts:
+                        rule_counts[rule_name] += 1
+                    else:
+                        rule_counts[rule_name] = 1
+                    # マッチしたルールのメタデータから役割とカテゴリをカウント
+                    role = match.meta['role']
+                    category = match.meta['category']
+                    if role in role_counts:
+                        role_counts[role] += 1
+                    else:
+                        role_counts[role] = 1
+                    if category in category_counts:
+                        category_counts[category] += 1
+                    else:
+                        category_counts[category] = 1
+    # TOP5の役割とカテゴリを返す
+    top_roles = sorted(role_counts, key=role_counts.get, reverse=True)[:5]
+    top_categories = sorted(category_counts, key=category_counts.get, reverse=True)[:5]
+    return {"role": top_roles, "categories": top_categories}
 
 def analyze_thread(thread_messages):
     if not thread_messages:
