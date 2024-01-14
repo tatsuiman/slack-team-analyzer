@@ -34,7 +34,7 @@ def parse_thread_url(url):
             channel_id = matches[1]
     return channel_id, thread_ts
 
-def check_messages(matches, days):
+def check_messages(matches, oldest):
     messages = []
     for message in matches:
         if (
@@ -43,33 +43,38 @@ def check_messages(matches, days):
             and message["channel"]["is_mpim"] == False
             and message["channel"]["is_group"] == False
             and message["channel"]["is_im"] == False
-            and float(message['ts']) > (datetime.now() - timedelta(days=days)).timestamp()
+            and float(message['ts']) > oldest
         ):
             messages.append(message)
     return messages
 
 
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
-def _fetch_user_messages(user_id, days, page=1):
-    return client.search_messages(query=f"from:{user_id}", count=100, page=page, oldest=(datetime.now() - timedelta(days=days)).timestamp())
+def _fetch_user_messages(user_id, page=1):
+    return client.search_messages(query=f"from:{user_id}", count=100, page=page, sort="timestamp", sort_dir="desc", highlight=False)
 
 @retry.retry(SlackApiError, tries=3, delay=60, backoff=2)
-def fetch_user_messages(user_id, days):
+def fetch_user_messages(user_id, oldest):
     messages = []
     # 初回のAPI呼び出し
-    response = _fetch_user_messages(user_id, days)
+    response = _fetch_user_messages(user_id)
     matches = response["messages"]["matches"]
+    matches = check_messages(matches, oldest)
     if len(matches) == 0:
         return messages
-    messages.extend(check_messages(matches, days))
-    # ページネーションを使用して残りのメッセージを取得
+    messages.extend(matches)
     total_pages = response["messages"]["paging"]["pages"]
-    for current_page in tqdm(range(2, total_pages + 1)):
-        response = _fetch_user_messages(user_id, days, page=current_page)
-        matches = response["messages"]["matches"]
-        if len(matches) == 0:
-            break
-        messages.extend(check_messages(matches, days))
+    # ページネーションを使用して残りのメッセージを取得
+    with tqdm(total=total_pages-1) as pbar:
+        for current_page in range(2, total_pages + 1):
+            response = _fetch_user_messages(user_id, page=current_page)
+            matches = response["messages"]["matches"]
+            matches = check_messages(matches, oldest)
+            if len(matches) == 0:
+                pbar.update(total_pages - current_page + 1)
+                break
+            messages.extend(matches)
+            pbar.update()
 
     return messages
 
@@ -78,12 +83,28 @@ def fetch_replies(channel_id, thread_ts):
     return client.conversations_replies(channel=channel_id, ts=thread_ts)["messages"]
 
 
+def get_last_dump_ts(days):
+    dump_log = 'last_dump_ts'
+    try:
+        with open(dump_log, 'r') as f:
+            last_dump = float(f.read())
+    except FileNotFoundError:
+        last_dump = (datetime.now() - timedelta(days=days)).timestamp()
+
+    with open(dump_log, 'w') as f:
+        f.write(str(datetime.now().timestamp()))
+    return last_dump
+
+
+import time
+
 def dump(user_id, real_name, days, dump_file):
     db = TinyDB(dump_file)
     Thread = Query()
     # すべてのメッセージを取得
     print(f"ユーザ({real_name})に関連した過去{days}日以内のスレッド一覧を取得しています。")
-    all_messages = fetch_user_messages(user_id, days)
+    last_dump = get_last_dump_ts(days)
+    all_messages = fetch_user_messages(user_id, last_dump)
     message_len = len(all_messages)
 
     print("スレッドのメッセージを取得しています。")
