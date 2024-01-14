@@ -166,3 +166,5 @@ logs
 *.png
 *.jsonl
 *.csv
+*.db
+last_dump_ts
