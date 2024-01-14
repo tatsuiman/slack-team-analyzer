@@ -18,7 +18,7 @@ def main(db_file):
         resp = analyze_yara(threads, user_id)
         roles = resp["roles"]
         categories = resp["categories"]
-        print(real_name, user_id, roles, categories)
+        print(f"# {real_name}({user_id})\n* roles: {roles}\n* categories: {categories}")
         time.sleep(3)
 
 if __name__ == "__main__":
