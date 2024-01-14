@@ -1,4 +1,3 @@
-import sys
 import click
 from analysis import get_thread_summary, get_threads, thread_to_markdown, truncate_strings, analyze_yara
 from ai import generate_json

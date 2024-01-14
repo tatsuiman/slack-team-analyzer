@@ -96,14 +96,12 @@ def get_last_dump_ts(days):
     return last_dump
 
 
-import time
-
-def dump(user_id, real_name, days, dump_file):
+def dump(user_id, real_name, last_dump, dump_file):
     db = TinyDB(dump_file)
     Thread = Query()
     # すべてのメッセージを取得
-    print(f"ユーザ({real_name})に関連した過去{days}日以内のスレッド一覧を取得しています。")
-    last_dump = get_last_dump_ts(days)
+    last_date = datetime.fromtimestamp(last_dump).isoformat()
+    print(f"ユーザ({real_name})に関連した {last_date} 以降のスレッド一覧を取得しています。")
     all_messages = fetch_user_messages(user_id, last_dump)
     message_len = len(all_messages)
 
@@ -143,5 +141,6 @@ if __name__ == "__main__":
     user = sys.argv[1]
     user_id = f"<@{user}>"
     real_name = get_real_name(user)
+    last_dump = get_last_dump_ts(days)
     dump_file = f"user_messages.db"
-    dump(user_id, real_name, days, dump_file)
+    dump(user_id, real_name, last_dump, dump_file)
