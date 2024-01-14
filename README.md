@@ -80,7 +80,7 @@ python dump_channel.py <チャンネルID>
 
 会話の分析
 ```bash
-python analysis_messages.py channel_messages.jsonl
+python analysis_messages.py -c <チャンネルID> -l
 ユーザー別総メッセージ数: {'<@U067Z40EWBZ>': 284, '<@U03RM7Z5GKX>': 219}
 ユーザー別の平均応答時間（分）: {'<@U03RM7Z5GKX> -> <@U067Z40EWBZ>': 1.036152673876593, '<@U067Z40EWBZ> -> <@U03RM7Z5GKX>': 35.47403147954545}
 会話の総期間（時間）: 1.2578323478737998
@@ -102,12 +102,12 @@ python dump_user.py <メンバーID>
 
 会話の分析
 ```bash
-python analysis_messages.py user_<メンバーID>_messages.jsonl
+python analysis_messages.py -u <メンバーID> -l
 ```
 
 ### チャンネルの人間関係図を作成する
 ```bash
-python network_user.py channel_messages.jsonl
+python network_user.py
 ```
 
 ### メンバーのプロファイリング
@@ -122,9 +122,9 @@ python network_user.py channel_messages.jsonl
 
 使用例
 ```bash
-python profiling_user.py user_<メンバーID 1>_messages.jsonl <メンバーID 1> output.csv
-python profiling_user.py user_<メンバーID 2>_messages.jsonl <メンバーID 2> output.csv
-python profiling_user.py user_<メンバーID 3>_messages.jsonl <メンバーID 3> output.csv
+python profiling_user.py -u <メンバーID 1>
+python profiling_user.py -u <メンバーID 2>
+python profiling_user.py -u <メンバーID 3>
 ```
 
 ### 特定のスレッドを分析する
