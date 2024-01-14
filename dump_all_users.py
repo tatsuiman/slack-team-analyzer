@@ -1,4 +1,5 @@
 from dump_user import dump, list_users, get_last_dump_ts
+import logging
 
 days = 30
 last_dump = get_last_dump_ts(days)
@@ -13,4 +14,4 @@ for user in list_users()['members']:
         dump(user_id, real_name, last_dump, dump_file)
     except Exception as e:
         print(f"Error: {user_id} {real_name}")
-        print(e)
+        logging.exception(e)
