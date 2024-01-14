@@ -141,6 +141,6 @@ if __name__ == "__main__":
     user = sys.argv[1]
     user_id = f"<@{user}>"
     real_name = get_real_name(user)
-    last_dump = get_last_dump_ts(days)
     dump_file = f"user_messages.db"
+    last_dump = (datetime.now() - timedelta(days=days)).timestamp()
     dump(user_id, real_name, last_dump, dump_file)
