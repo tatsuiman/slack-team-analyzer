@@ -16,7 +16,6 @@ def main(db_file, output_csv, user, channel, llm, size):
     threads = get_threads(db_file, channel_id=channel, user_id=user)
     real_name = get_real_name(user)
     summary = get_thread_summary(threads)
-    print(real_name, user)
 
     markdown = thread_to_markdown(threads, thread_size=size)
     markdown = truncate_strings(markdown, max_tokens=64000)
@@ -25,9 +24,7 @@ def main(db_file, output_csv, user, channel, llm, size):
     for user_id in summary["ユーザー別総メッセージ数"].keys():
         user_id = user_id.replace("<@", "").replace(">", "")
         yara_match = analyze_yara(threads, user_id)
-        markdown += f"## {user_id}について\n"
-        for key, value in yara_match.items():
-            markdown += f"* {key}: {value}\n"
+        markdown += f"## {user_id}について\n* roles: {yara_match['roles']}\n* categories: {yara_match['categories']}\n"
 
     json_format = """
     {
@@ -44,22 +41,24 @@ def main(db_file, output_csv, user, channel, llm, size):
     {json_format}
     """
     if not llm:
-        print(markdown)
+        resp = analyze_yara(threads, user)
+        roles = resp["roles"]
+        print(real_name, user, roles)
     else:
         resp = generate_json(markdown, system_prompt)
         for key, value in resp.items():
             print(f"{key}: {value}")
+        data = {'user_id': [user_id], 'real_name': [real_name], **{k: [v] for k, v in resp.items()}}
+        print(data)
+        df_new = pd.DataFrame(data)
 
-    data = {'user_id': [user_id], 'real_name': [real_name], **{k: [v] for k, v in resp.items()}}
-    df_new = pd.DataFrame(data)
+        if os.path.isfile(output_csv):
+            df_old = pd.read_csv(output_csv)
+            df_combined = pd.concat([df_old, df_new]).drop_duplicates(subset='user_id', keep='last')
+        else:
+            df_combined = df_new
 
-    if os.path.isfile(output_csv):
-        df_old = pd.read_csv(output_csv)
-        df_combined = pd.concat([df_old, df_new]).drop_duplicates(subset='user_id', keep='last')
-    else:
-        df_combined = df_new
-
-    df_combined.to_csv(output_csv, index=False)
+        df_combined.to_csv(output_csv, index=False)
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 slack_sdk
 openai
 langchain
+langchain-community
 tiktoken
 tqdm
 click

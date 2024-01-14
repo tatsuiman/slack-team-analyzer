@@ -15,8 +15,6 @@ slack_token = os.getenv("SLACK_USER_TOKEN")
 # Slackクライアントの初期化
 client = WebClient(token=slack_token)
 
-def list_users():
-    return client.users_list()
 
 def parse_thread_url(url):
     url_pattern = r"slack\.com/archives/([A-Z0-9]+)/p(\d{10})(\d{6})\?thread_ts=(\d+\.\d+)"

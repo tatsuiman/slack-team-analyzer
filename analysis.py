@@ -10,7 +10,7 @@ from datetime import datetime
 def parse_timestamp(ts):
     return datetime.fromtimestamp(float(ts))
 
-def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
+def analyze_yara(threads, user_id=None, channel_id=None, rules_file='rules/index.yar', verbose=False):
     # yara ルールを事前にコンパイル
     rules = yara.compile(filepath=rules_file)
     rule_counts = {}
@@ -24,9 +24,14 @@ def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
         if 'user' in df.columns:
             if user_id is not None:
                 df = df[df['user'] == user_id]
+            if channel_id is not None:
+                df = df[df['channel_id'] == channel_id]
             df['text'] = df['text'].apply(lambda x: html.unescape(x))
             # yaraの結果を格納する新しい列を作成
             df['yara_matches'] = df['text'].apply(lambda x: rules.match(data=x))
+            # ルールがマッチした場合は該当スレッドを表示する
+            if any(df['yara_matches']) and verbose:
+                print(thread_to_markdown({thread_ts: thread_messages}, thread_size=0))
             # マッチしたルールの種類と頻度をカウント
             for matches in df['yara_matches']:
                 for match in matches:
@@ -36,8 +41,10 @@ def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
                     else:
                         rule_counts[rule_name] = 1
                     # マッチしたルールのメタデータから役割とカテゴリをカウント
-                    role = match.meta['role']
-                    category = match.meta['category']
+                    role = match.meta.get('role')
+                    category = match.meta.get('category')
+                    if role is None or category is None:
+                        continue
                     if role in role_counts:
                         role_counts[role] += 1
                     else:
@@ -49,7 +56,7 @@ def analyze_yara(threads, user_id=None, rules_file='rules/index.yar'):
     # TOP5の役割とカテゴリを返す
     top_roles = sorted(role_counts, key=role_counts.get, reverse=True)[:5]
     top_categories = sorted(category_counts, key=category_counts.get, reverse=True)[:5]
-    return {"role": top_roles, "categories": top_categories}
+    return {"roles": top_roles, "categories": top_categories, "rules": rule_counts}
 
 def analyze_thread(thread_messages):
     if not thread_messages:

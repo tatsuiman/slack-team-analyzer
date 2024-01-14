@@ -22,9 +22,7 @@ def main(db_file, user, channel, llm, size):
     for user_id in summary["ユーザー別総メッセージ数"].keys():
         user_id = user_id.replace("<@", "").replace(">", "")
         yara_match = analyze_yara(threads, user_id)
-        markdown += f"## {user_id}について\n"
-        for key, value in yara_match.items():
-            markdown += f"* {key}: {value}\n"
+        markdown += f"## {user_id}について\n* roles: {yara_match['roles']}\n* categories: {yara_match['categories']}\n"
 
 
     system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。

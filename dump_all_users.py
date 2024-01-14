@@ -1,4 +1,5 @@
-from dump_user import dump, list_users, get_last_dump_ts
+from dump_user import dump, get_last_dump_ts
+from slacklib import list_users
 import logging
 
 days = 30

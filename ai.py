@@ -1,7 +1,7 @@
 import os
 import json
 from openai import OpenAI
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 
 client = OpenAI()
