@@ -1,7 +1,7 @@
 import sys
 import click
 from graphviz import Digraph
-from slacklib import get_real_name
+from slacklib import get_user_info
 from analysis import get_messages
 
 
@@ -37,12 +37,20 @@ def main(db_file, user, channel):
     real_name_cache = {}
     for user, interactions in user_interactions.items():
         if user not in real_name_cache:
-            real_name_cache[user] = get_real_name(user)
+            user_info = get_user_info(user)
+            if user_info['user']['deleted'] or user_info['user']['is_bot']:
+                continue
+            real_name_cache[user] = user_info['user']['real_name']
         real_user = real_name_cache[user]
         G.node(real_user)
         for target_user, count in interactions.items():
+            if count < 20:
+                continue
             if target_user not in real_name_cache:
-                real_name_cache[target_user] = get_real_name(target_user)
+                user_info = get_user_info(target_user)
+                if user_info['user']['deleted'] or user_info['user']['is_bot']:
+                    continue
+                real_name_cache[target_user] = user_info['user']['real_name']
             real_target_user = real_name_cache[target_user]
             G.edge(real_user, real_target_user, label=str(count))
 
