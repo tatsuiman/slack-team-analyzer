@@ -6,11 +6,12 @@ import tqdm
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from datetime import datetime, timedelta
+from tinydb import TinyDB, Query
 
 # SlackのトークンとチャンネルIDを設定
 slack_token = os.getenv("SLACK_BOT_TOKEN")
 channel_id = sys.argv[1]
-dump_file = f"channel_{channel_id}_messages.jsonl"
+dump_file = f"user_messages.db"
 days = 30
 
 # Slackクライアントの初期化
@@ -57,22 +58,23 @@ all_messages = fetch_channel_messages(channel_id, days)
 message_len = len(all_messages)
 
 print("スレッドのメッセージを取得しています。")
-with open(dump_file, "w") as f:
-    for message in tqdm.tqdm(all_messages, total=message_len):
-        # リプライメッセージも取得
-        if message.get('reply_count', 0) > 0:
-            try:
-                reply_messages = fetch_replies(channel_id, message['ts'])
-                for reply_message in reply_messages:
-                    f.write(f"{json.dumps(reply_message, ensure_ascii=False)}\n")
-            except SlackApiError as e:
-                if e.response["error"] == 'thread_not_found':
-                    f.write(f"{json.dumps(message, ensure_ascii=False)}\n")
-                    continue
-                elif e.response["error"] == 'ratelimited':
-                    print("Rate limit exceeded. Exiting.")
-                    sys.exit(1)
-                else:
-                    raise e
-        else:
-            f.write(f"{json.dumps(message, ensure_ascii=False)}\n")
+db = TinyDB(dump_file)
+Thread = Query()
+for message in tqdm.tqdm(all_messages, total=message_len):
+    # リプライメッセージも取得
+    if message.get('reply_count', 0) > 0:
+        try:
+            reply_messages = fetch_replies(channel_id, message['ts'])
+            for reply_message in reply_messages:
+                db.upsert(reply_message, Thread.ts == reply_message["ts"])
+        except SlackApiError as e:
+            if e.response["error"] == 'thread_not_found':
+                db.upsert(message, Thread.ts == message["ts"])
+                continue
+            elif e.response["error"] == 'ratelimited':
+                print("Rate limit exceeded. Exiting.")
+                sys.exit(1)
+            else:
+                raise e
+    else:
+        db.upsert(message, Thread.ts == message["ts"])
