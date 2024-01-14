@@ -166,3 +166,4 @@ logs
 *.png
 *.jsonl
 *.csv
+*.db

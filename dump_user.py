@@ -4,6 +4,7 @@ import sys
 import json
 import retry
 from tqdm import tqdm
+from tinydb import TinyDB, Query
 from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -76,40 +77,50 @@ def fetch_user_messages(user_id, days):
 def fetch_replies(channel_id, thread_ts):
     return client.conversations_replies(channel=channel_id, ts=thread_ts)["messages"]
 
+
 def dump(user_id, real_name, days, dump_file):
-    thread_ts_cache = set()
+    db = TinyDB(dump_file)
+    Thread = Query()
     # すべてのメッセージを取得
     print(f"ユーザ({real_name})に関連した過去{days}日以内のスレッド一覧を取得しています。")
     all_messages = fetch_user_messages(user_id, days)
     message_len = len(all_messages)
 
     print("スレッドのメッセージを取得しています。")
-    with open(dump_file, "w") as f:
-        for message in tqdm(all_messages, total=message_len):
-            url = message['permalink']
-            channel_id, thread_ts = parse_thread_url(url)
-            if thread_ts in thread_ts_cache:
+    for message in tqdm(all_messages, total=message_len):
+        url = message['permalink']
+        channel_id, thread_ts = parse_thread_url(url)
+        message["thread_ts"] = thread_ts
+        message["channel_id"] = channel_id
+        message["thread_users"] = [message["user"]]
+        ts = message["ts"]
+        try:
+            reply_messages = fetch_replies(channel_id, thread_ts)
+        except SlackApiError as e:
+            if e.response["error"] == 'thread_not_found':
+                db.upsert(message, Thread.ts == ts)
                 continue
+            elif e.response["error"] == 'ratelimited':
+                print("Rate limit exceeded. Exiting.")
+                sys.exit(1)
             else:
-                thread_ts_cache.add(thread_ts)
-            try:
-                reply_messages = fetch_replies(message['channel']['id'], thread_ts)
-            except SlackApiError as e:
-                if e.response["error"] == 'thread_not_found':
-                    f.write(f"{json.dumps(message, ensure_ascii=False)}\n")
-                    continue
-                elif e.response["error"] == 'ratelimited':
-                    print("Rate limit exceeded. Exiting.")
-                    sys.exit(1)
-                else:
-                    raise e
-            for reply_message in reply_messages:
-                f.write(f"{json.dumps(reply_message, ensure_ascii=False)}\n")
+                raise e
+
+        thread_users = []
+        for reply_message in reply_messages:
+            thread_users.append(reply_message["user"])
+            thread_users = list(set(thread_users))
+
+        for reply_message in reply_messages:
+            reply_message["thread_ts"] = thread_ts
+            reply_message["channel_id"] = channel_id
+            reply_message["thread_users"] = thread_users
+            db.upsert(reply_message, Thread.ts == reply_message["ts"])
 
 if __name__ == "__main__":
     days = 30
     user = sys.argv[1]
     user_id = f"<@{user}>"
     real_name = get_real_name(user)
-    dump_file = f"user_{user}_messages.jsonl"
+    dump_file = f"user_messages.db"
     dump(user_id, real_name, days, dump_file)

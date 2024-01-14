@@ -3,6 +3,7 @@ import html
 import yara
 import tiktoken
 import pandas as pd
+from tinydb import TinyDB, Query
 from datetime import datetime
 
 # Function to parse timestamp
@@ -198,18 +199,32 @@ def thread_to_markdown(threads, thread_size=20):
     return threads_formatted
 
 
-def get_threads(file_path):
+def get_threads(file_path, user_id=None, channel_id=None):
     threads = {}
-    with open(file_path, 'r') as file:
-        for line in file:
-            message = json.loads(line)
-            thread_ts = message.get('thread_ts', None)
+    messages = get_messages(file_path, user_id, channel_id)
 
-            if thread_ts:
-                if thread_ts not in threads:
-                    threads[thread_ts] = []
-                threads[thread_ts].append(message)
+    for message in messages:
+        thread_ts = message['thread_ts']
+        if thread_ts not in threads:
+            threads[thread_ts] = []
+        threads[thread_ts].append(message)
+
     return threads
+
+def get_messages(file_path, user_id=None, channel_id=None):
+    db = TinyDB(file_path)
+    Message = Query()
+
+    if user_id and channel_id:
+        messages = db.search((Message.thread_users.any(user_id)) & (Message.channel_id == channel_id))
+    elif user_id:
+        messages = db.search(Message.thread_users.any(user_id))
+    elif channel_id:
+        messages = db.search(Message.channel_id == channel_id)
+    else:
+        messages = db.all()
+
+    return messages
 
 def truncate_strings(text, max_tokens=64000):
     enc = tiktoken.encoding_for_model("gpt-4")

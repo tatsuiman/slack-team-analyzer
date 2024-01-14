@@ -3,6 +3,8 @@ openai
 langchain
 tiktoken
 tqdm
+click
 retry
+tinydb
 yara-python
 pygraphviz
