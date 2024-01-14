@@ -127,14 +127,16 @@ def dump(user_id, real_name, last_dump, dump_file):
 
         thread_users = []
         for reply_message in reply_messages:
-            thread_users.append(reply_message["user"])
-            thread_users = list(set(thread_users))
+            if reply_message.get("user") is not None and reply_message["user"] != "USLACKBOT":
+                thread_users.append(reply_message["user"])
+                thread_users = list(set(thread_users))
 
         for reply_message in reply_messages:
-            reply_message["thread_ts"] = thread_ts
-            reply_message["channel_id"] = channel_id
-            reply_message["thread_users"] = thread_users
-            db.upsert(reply_message, Thread.ts == reply_message["ts"])
+            if reply_message.get("user") is not None and reply_message["user"] != "USLACKBOT":
+                reply_message["thread_ts"] = thread_ts
+                reply_message["channel_id"] = channel_id
+                reply_message["thread_users"] = thread_users
+                db.upsert(reply_message, Thread.ts == reply_message["ts"])
 
 if __name__ == "__main__":
     days = 30
