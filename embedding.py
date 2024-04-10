@@ -27,39 +27,46 @@ EMBEDDING_MODEL_PRICE_PER_TOKEN = {
 
 
 def plot_embeddings(embeddings):
-    # ref: https://qiita.com/leolui2013/items/40835bf7ab44a6c136b5
-    # リストをNumPy配列に変換
-    embeddings_array = np.array(embeddings)
-
-    # KMeansクラスタリングを実行
-    n_clusters = 3
-    kmeans = KMeans(n_clusters=n_clusters, init="k-means++", random_state=42)
-    kmeans.fit(embeddings_array)
-    labels = kmeans.labels_
-
-    # t-SNEを使用して次元削減
+    users = []
+    values = []
+    for data in embeddings:
+        users.append(data["user"])
+        values.append(data["values"])
+    values = np.array(values)
+    # TSNEで2次元に削減
+    # n_components は、削減後の次元数です。
+    # perplexity は、近傍の数を決定し、高い値はデータ間の大局的な構造を、低い値は局所的な構造を捉えます。
+    # init は、初期化方法
+    # learning_rate は、学習率
     tsne = TSNE(
-        n_components=2, perplexity=15, random_state=42, init="random", learning_rate=100
+        n_components=2,
+        perplexity=50,
+        random_state=42,
+        init="random",
+        learning_rate=100,
     )
-    vis_dims2 = tsne.fit_transform(embeddings_array)
+    embeddings_reduced = tsne.fit_transform(values)
 
-    # 分割されたデータのX,Y座標を取得
-    x = vis_dims2[:, 0]
-    y = vis_dims2[:, 1]
+    # プロットの準備（ユーザーごとに異なる色で）
+    plt.figure(figsize=(12, 10))
+    colors = plt.cm.rainbow(
+        np.linspace(0, 1, len(set(users)))
+    )  # ユーザーごとに色を決定
 
-    # クラスタごとにプロットするコードを再実行
-    plt.figure(figsize=(10, 8))
-    for category, color in enumerate(["purple", "green", "red"]):
-        xs = x[labels == category]
-        ys = y[labels == category]
-        plt.scatter(xs, ys, color=color, alpha=0.3)
+    for user, color in zip(set(users), colors):
+        indices = [i for i, u in enumerate(users) if u == user]
+        plt.scatter(
+            embeddings_reduced[indices, 0],
+            embeddings_reduced[indices, 1],
+            color=color,
+            label=user,
+        )
 
-        avg_x = np.mean(xs)
-        avg_y = np.mean(ys)
-
-        plt.scatter(avg_x, avg_y, marker="x", color=color, s=100)
-
-    plt.title("Clusters identified visualized in language 2d using t-SNE")
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.title("User Embedding Clusters in 2D via t-SNE")
+    plt.legend(markerscale=2, bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
     plt.show()
 
 

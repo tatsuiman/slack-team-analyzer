@@ -146,8 +146,8 @@ summary: チャット履歴は比較的明確であり、情報提供は詳細�
 
 ## ユーザメッセージのベクトル化
 ```bash
-python dump_user.py <メンバーID>
-python embedding_user.py -f user_messages.db -u <メンバーID> -p -i -v
+python dump_all_users.py
+python embedding_user.py -f user_messages.db -i -v
 ```
 
 ![](docs/img/embedding_view.png)

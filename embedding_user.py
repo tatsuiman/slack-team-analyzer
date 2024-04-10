@@ -27,6 +27,7 @@ def main(db_file, user, model, dry_run, pinecone_index, view):
     total_cost = 0
     total_token_size = 0
     embeddings = []
+    users = []
     messages = get_messages(db_file, user_id=user, channel_id=None)
     db = TinyDB(db_file)
     Message = Query()
@@ -48,7 +49,7 @@ def main(db_file, user, model, dry_run, pinecone_index, view):
 
         # view embeddings
         if embedding is not None and view:
-            embeddings.append(embedding)
+            embeddings.append({"user": message["user"], "values": embedding})
 
         # upsert the message to pinecone
         if embedding is not None and pinecone_index:
