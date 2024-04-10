@@ -8,7 +8,8 @@ from analysis import get_threads, analyze_yara
 
 @click.command()
 @click.option("-f", "--db_file", help="The DB file path.", default="user_messages.db")
-def main(db_file):
+@click.option("-i", "--interval", help="The interval to sleep.", default=3)
+def main(db_file, interval):
     threads = get_threads(db_file)
     for user in list_users()["members"]:
         # botと削除されたユーザはスキップ
@@ -20,7 +21,7 @@ def main(db_file):
         roles = resp["roles"]
         categories = resp["categories"]
         print(f"# {real_name}({user_id})\n* roles: {roles}\n* categories: {categories}")
-        time.sleep(3)
+        time.sleep(interval)
 
 
 if __name__ == "__main__":

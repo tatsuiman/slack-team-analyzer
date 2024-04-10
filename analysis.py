@@ -238,18 +238,20 @@ def get_threads(file_path, user_id=None, channel_id=None):
     return threads
 
 
-def get_messages(file_path, user_id=None, channel_id=None):
+def get_messages(file_path, user_id=None, channel_id=None, ts=None):
     db = TinyDB(file_path)
     Message = Query()
 
     if user_id and channel_id:
         messages = db.search(
-            (Message.thread_users.any(user_id)) & (Message.channel_id == channel_id)
+            (Message.user == user_id) & (Message.channel_id == channel_id)
         )
     elif user_id:
-        messages = db.search(Message.thread_users.any(user_id))
+        messages = db.search(Message.user == user_id)
     elif channel_id:
         messages = db.search(Message.channel_id == channel_id)
+    elif ts:
+        messages = db.search(Message.ts == ts)
     else:
         messages = db.all()
 
@@ -261,3 +263,9 @@ def truncate_strings(text, max_tokens=64000):
     encode_strings = enc.encode(text, allowed_special="all")
     encode_strings = encode_strings[:max_tokens]
     return enc.decode(encode_strings)
+
+
+def calculate_token_size(text):
+    # TikTokのAPIやライブラリを使用して実際のトークンサイズを計算
+    encoding = tiktoken.encoding_for_model("gpt-4")
+    return len(encoding.encode(text, allowed_special="all"))
