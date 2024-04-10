@@ -5,6 +5,7 @@ import click
 import pandas as pd
 from tqdm import tqdm
 from tinydb import TinyDB, Query
+from slacklib import get_user_info
 from analysis import get_messages, calculate_token_size
 from embedding import (
     prepare_index,
@@ -23,16 +24,19 @@ from embedding import (
 @click.option("-d", "--dry-run", is_flag=True, help="Dry run.")
 @click.option("-i", "--pinecone_index", is_flag=True, help="use pinecone index.")
 @click.option("-v", "--view", is_flag=True, help="view the message vector.")
-def main(db_file, user, model, dry_run, pinecone_index, view):
+@click.option("-b", "--skip_bot", is_flag=True, help="ignore bot messages.")
+def main(db_file, user, model, dry_run, pinecone_index, view, skip_bot):
     total_cost = 0
     total_token_size = 0
     embeddings = []
-    users = []
+    real_name_cache = {}
     messages = get_messages(db_file, user_id=user, channel_id=None)
     db = TinyDB(db_file)
     Message = Query()
     index = prepare_index("slack-messages")
     for message in tqdm(messages):
+        if skip_bot and "bot_id" in message:
+            continue
         ts = message["ts"]
         embedding = message.get("embedding")
         if embedding is None:
@@ -49,7 +53,15 @@ def main(db_file, user, model, dry_run, pinecone_index, view):
 
         # view embeddings
         if embedding is not None and view:
-            embeddings.append({"user": message["user"], "values": embedding})
+            user_id = message["user"]
+            if real_name_cache.get(user_id) is None:
+                user_info = get_user_info(user_id)
+                if user_info["user"]["deleted"]:
+                    real_name_cache[user_id] = "deleted user"
+                else:
+                    real_name_cache[user_id] = user_info["user"]["profile"]["real_name"]
+            real_name = real_name_cache[user_id]
+            embeddings.append({"user": real_name, "values": embedding})
 
         # upsert the message to pinecone
         if embedding is not None and pinecone_index:
