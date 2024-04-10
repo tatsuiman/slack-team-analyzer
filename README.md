@@ -157,7 +157,11 @@ python embedding_user.py -f user_messages.db -u <メンバーID> -p -i -v
 python semantic_search_message.py -f user_messages.db -q '質問を入れてください'
 ```
 
-## Yaraスキャン
+## Yaraルールベースの分類
+```bash
+python profiling_all_users.py
+```
+
 ```bash
 cat << __EOF__ > myrule.yar
 rule myrule {
