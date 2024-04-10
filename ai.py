@@ -6,6 +6,7 @@ from langchain.schema import HumanMessage, SystemMessage
 
 client = OpenAI()
 
+
 def generate_json(text, system_prompt, model="gpt-4-1106-preview"):
     chat = ChatOpenAI(model=model).bind(response_format={"type": "json_object"})
     output = chat.invoke(

@@ -143,3 +143,16 @@ decision_making_transparency: 決定のプロセスは明示されていませ�
 quality_and_quantity_of_feedback: 情報の提供は詳細であり、十分なフィードバックが行われています。
 summary: チャット履歴は比較的明確であり、情報提供は詳細ですが、議論に参加するメンバーのバランスが改善されると良いでしょう。意見の多様性や決定の透明性を向上させることも重要です
 ```
+
+## Yaraスキャン
+```bash
+cat << __EOF__ > myrule.yar
+rule myrule {
+    strings:
+        $string1 = "openai" nocase
+    condition:
+        $string1
+}
+__EOF__
+python yara_scan.py -r myrule.yar
+```

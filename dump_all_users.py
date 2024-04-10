@@ -5,7 +5,7 @@ import logging
 days = 30
 last_dump = get_last_dump_ts(days)
 dump_file = f"user_messages.db"
-for user in list_users()['members']:
+for user in list_users()["members"]:
     # botと削除されたユーザはスキップ
     if user["deleted"] or user["is_bot"] or user["id"] == "USLACKBOT":
         continue

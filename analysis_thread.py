@@ -5,8 +5,11 @@ from slack_sdk import WebClient
 from analysis import get_message_summary, thread_to_markdown
 from ai import generate_json
 
+
 def parse_thread_url(url):
-    url_pattern = r"slack\.com/archives/([A-Z0-9]+)/p(\d{10})(\d{6})\?thread_ts=(\d+\.\d+)"
+    url_pattern = (
+        r"slack\.com/archives/([A-Z0-9]+)/p(\d{10})(\d{6})\?thread_ts=(\d+\.\d+)"
+    )
     matches = re.search(url_pattern, url)
     channel_id = None
     thread_ts = None
@@ -21,6 +24,7 @@ def parse_thread_url(url):
             channel_id = matches[1]
     return channel_id, thread_ts
 
+
 channel_id, thread_ts = parse_thread_url(sys.argv[1])
 
 # SlackのトークンとチャンネルIDを設定
@@ -31,7 +35,7 @@ messages = client.conversations_replies(channel=channel_id, ts=thread_ts)["messa
 
 threads = {}
 for message in messages:
-    thread_ts = message.get('thread_ts', None)
+    thread_ts = message.get("thread_ts", None)
     if thread_ts:
         if thread_ts not in threads:
             threads[thread_ts] = []

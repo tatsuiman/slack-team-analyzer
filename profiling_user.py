@@ -3,15 +3,24 @@ import click
 import pandas as pd
 from ai import generate_json
 from slacklib import get_real_name
-from analysis import get_threads, thread_to_markdown, truncate_strings, analyze_yara, get_thread_summary
+from analysis import (
+    get_threads,
+    thread_to_markdown,
+    truncate_strings,
+    analyze_yara,
+    get_thread_summary,
+)
+
 
 @click.command()
-@click.option('-f', '--db_file', help='The DB file path.', default="user_messages.db")
-@click.option('-u', '--user', help='The user ID.', default=None)
-@click.option('-c', '--channel', help='The channel ID.', default=None)
-@click.option('-l', '--llm', help='Use LLM.', default=False, type=bool)
-@click.option('-s', '--size', help='The size of the thread.', default=0, type=int)
-@click.option('-o', '--output_csv', help='The output CSV file path.', default="output.csv")
+@click.option("-f", "--db_file", help="The DB file path.", default="user_messages.db")
+@click.option("-u", "--user", help="The user ID.", default=None)
+@click.option("-c", "--channel", help="The channel ID.", default=None)
+@click.option("-l", "--llm", help="Use LLM.", default=False, type=bool)
+@click.option("-s", "--size", help="The size of the thread.", default=0, type=int)
+@click.option(
+    "-o", "--output_csv", help="The output CSV file path.", default="output.csv"
+)
 def main(db_file, output_csv, user, channel, llm, size):
     threads = get_threads(db_file, channel_id=channel, user_id=user)
     real_name = get_real_name(user)
@@ -48,17 +57,24 @@ def main(db_file, output_csv, user, channel, llm, size):
         resp = generate_json(markdown, system_prompt)
         for key, value in resp.items():
             print(f"{key}: {value}")
-        data = {'user_id': [user_id], 'real_name': [real_name], **{k: [v] for k, v in resp.items()}}
+        data = {
+            "user_id": [user_id],
+            "real_name": [real_name],
+            **{k: [v] for k, v in resp.items()},
+        }
         print(data)
         df_new = pd.DataFrame(data)
 
         if os.path.isfile(output_csv):
             df_old = pd.read_csv(output_csv)
-            df_combined = pd.concat([df_old, df_new]).drop_duplicates(subset='user_id', keep='last')
+            df_combined = pd.concat([df_old, df_new]).drop_duplicates(
+                subset="user_id", keep="last"
+            )
         else:
             df_combined = df_new
 
         df_combined.to_csv(output_csv, index=False)
+
 
 if __name__ == "__main__":
     main()

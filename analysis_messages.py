@@ -1,14 +1,20 @@
 import click
-from analysis import get_thread_summary, get_threads, thread_to_markdown, truncate_strings, analyze_yara
+from analysis import (
+    get_thread_summary,
+    get_threads,
+    thread_to_markdown,
+    truncate_strings,
+    analyze_yara,
+)
 from ai import generate_json
 
 
 @click.command()
-@click.option('-f', '--db_file', help='The DB file path.', default="user_messages.db")
-@click.option('-u', '--user', help='The user ID.', default=None)
-@click.option('-c', '--channel', help='The channel ID.', default=None)
-@click.option('-l', '--llm', help='Use LLM.', default=False, type=bool)
-@click.option('-s', '--size', help='The size of the thread.', default=0, type=int)
+@click.option("-f", "--db_file", help="The DB file path.", default="user_messages.db")
+@click.option("-u", "--user", help="The user ID.", default=None)
+@click.option("-c", "--channel", help="The channel ID.", default=None)
+@click.option("-l", "--llm", help="Use LLM.", default=False, type=bool)
+@click.option("-s", "--size", help="The size of the thread.", default=0, type=int)
 def main(db_file, user, channel, llm, size):
     threads = get_threads(db_file, channel_id=channel, user_id=user)
     summary = get_thread_summary(threads)
@@ -23,7 +29,6 @@ def main(db_file, user, channel, llm, size):
         user_id = user_id.replace("<@", "").replace(">", "")
         yara_match = analyze_yara(threads, user_id)
         markdown += f"## {user_id}について\n* roles: {yara_match['roles']}\n* categories: {yara_match['categories']}\n"
-
 
     system_prompt = """あなたは入力されたチャットの履歴について認知バイアスの分析と評価を行い、次のフォーマットのjsonレポートを出力します。
 
@@ -44,5 +49,6 @@ def main(db_file, user, channel, llm, size):
         for key, value in resp.items():
             print(f"{key}: {value}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
