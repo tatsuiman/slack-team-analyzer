@@ -144,7 +144,7 @@ quality_and_quantity_of_feedback: 情報の提供は詳細であり、十分な�
 summary: チャット履歴は比較的明確であり、情報提供は詳細ですが、議論に参加するメンバーのバランスが改善されると良いでしょう。意見の多様性や決定の透明性を向上させることも重要です
 ```
 
-## ユーザメッセージのベクトル化
+## ユーザメッセージの特徴を分類する
 ```bash
 python dump_all_users.py
 python embedding_user.py -f user_messages.db -i -v
