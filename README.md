@@ -148,6 +148,7 @@ summary: チャット履歴は比較的明確であり、情報提供は詳細�
 ```bash
 python embedding_user.py -f user_messages.db -u <メンバーID> -p -i -v
 ```
+
 ![](docs/img/embedding_view.png)
 
 ## セマンティック検索
