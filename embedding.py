@@ -14,16 +14,27 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
-client = OpenAI()
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-
-
 # price per 1k tokens.
 EMBEDDING_MODEL_PRICE_PER_TOKEN = {
     "text-embedding-3-small": 0.00002,
     "text-embedding-3-large": 0.00013,
     "text-embedding-ada-002": 0.0001,
 }
+
+USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
+
+if USE_LOCAL_LLM:
+    from torch import Tensor
+    from transformers import AutoTokenizer, AutoModel
+
+    tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-large")
+    local_model = AutoModel.from_pretrained("intfloat/multilingual-e5-large")
+
+    def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
+        last_hidden = last_hidden_states.masked_fill(
+            ~attention_mask[..., None].bool(), 0.0
+        )
+        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
 
 def plot_embeddings(embeddings):
@@ -71,6 +82,7 @@ def plot_embeddings(embeddings):
 
 
 def prepare_index(index_name):
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
     # Pineconeのインデックスを確認する
     if index_name not in pc.list_indexes().names():
         # インデックスがなければ作成する
@@ -89,5 +101,19 @@ def prepare_index(index_name):
 
 
 def get_embedding(text, model):
-    embedding = client.embeddings.create(input=[text], model=model).data[0].embedding
+    if USE_LOCAL_LLM:
+        inputs = [text]
+        batch_dict = tokenizer(
+            inputs, max_length=512, padding=True, truncation=True, return_tensors="pt"
+        )
+        outputs = local_model(**batch_dict)
+        embeddings = average_pool(
+            outputs.last_hidden_state, batch_dict["attention_mask"]
+        )
+        embedding = embeddings[0].detach().numpy().tolist()
+    else:
+        client = OpenAI()
+        embedding = (
+            client.embeddings.create(input=[text], model=model).data[0].embedding
+        )
     return embedding
