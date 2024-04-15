@@ -147,7 +147,8 @@ summary: チャット履歴は比較的明確であり、情報提供は詳細�
 ## ユーザメッセージの特徴を分類する
 ```bash
 python dump_all_users.py
-python embedding_user.py -f user_messages.db -i -v
+python embedding_user.py -f user_messages.db -i
+python embedding_view.py -f user_messages.db -b
 ```
 
 ![](docs/img/embedding_view.png)
