@@ -28,7 +28,7 @@ if USE_LOCAL_LLM:
     from transformers import AutoTokenizer, AutoModel
 
     tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-large")
-    model = AutoModel.from_pretrained("intfloat/multilingual-e5-large")
+    local_model = AutoModel.from_pretrained("intfloat/multilingual-e5-large")
 
     def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
         last_hidden = last_hidden_states.masked_fill(
@@ -106,11 +106,11 @@ def get_embedding(text, model):
         batch_dict = tokenizer(
             inputs, max_length=512, padding=True, truncation=True, return_tensors="pt"
         )
-        outputs = model(**batch_dict)
+        outputs = local_model(**batch_dict)
         embeddings = average_pool(
             outputs.last_hidden_state, batch_dict["attention_mask"]
         )
-        embedding = embeddings[0].detach().numpy()
+        embedding = embeddings[0].detach().numpy().tolist()
     else:
         client = OpenAI()
         embedding = (
