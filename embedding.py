@@ -14,17 +14,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
-client = OpenAI()
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-
-
 # price per 1k tokens.
 EMBEDDING_MODEL_PRICE_PER_TOKEN = {
     "text-embedding-3-small": 0.00002,
     "text-embedding-3-large": 0.00013,
     "text-embedding-ada-002": 0.0001,
 }
-
 
 USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
 
@@ -87,6 +82,7 @@ def plot_embeddings(embeddings):
 
 
 def prepare_index(index_name):
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
     # Pineconeのインデックスを確認する
     if index_name not in pc.list_indexes().names():
         # インデックスがなければ作成する
@@ -116,6 +112,7 @@ def get_embedding(text, model):
         )
         embedding = embeddings[0].detach().numpy()
     else:
+        client = OpenAI()
         embedding = (
             client.embeddings.create(input=[text], model=model).data[0].embedding
         )
