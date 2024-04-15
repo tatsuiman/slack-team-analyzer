@@ -33,7 +33,8 @@ def main(db_file, user, model, dry_run, pinecone_index, view, skip_bot):
     messages = get_messages(db_file, user_id=user, channel_id=None)
     db = TinyDB(db_file)
     Message = Query()
-    index = prepare_index("slack-messages")
+    if pinecone_index:
+        index = prepare_index("slack-messages")
     for message in tqdm(messages):
         if skip_bot and "bot_id" in message:
             continue
