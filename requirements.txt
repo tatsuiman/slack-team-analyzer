@@ -10,3 +10,4 @@ tinydb
 yara-python
 pygraphviz
 pinecone-client
+sentence_transformers
