@@ -26,6 +26,22 @@ EMBEDDING_MODEL_PRICE_PER_TOKEN = {
 }
 
 
+USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
+
+if USE_LOCAL_LLM:
+    from torch import Tensor
+    from transformers import AutoTokenizer, AutoModel
+
+    tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-large")
+    model = AutoModel.from_pretrained("intfloat/multilingual-e5-large")
+
+    def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
+        last_hidden = last_hidden_states.masked_fill(
+            ~attention_mask[..., None].bool(), 0.0
+        )
+        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+
+
 def plot_embeddings(embeddings):
     users = []
     values = []
@@ -89,5 +105,18 @@ def prepare_index(index_name):
 
 
 def get_embedding(text, model):
-    embedding = client.embeddings.create(input=[text], model=model).data[0].embedding
+    if USE_LOCAL_LLM:
+        inputs = [text]
+        batch_dict = tokenizer(
+            inputs, max_length=512, padding=True, truncation=True, return_tensors="pt"
+        )
+        outputs = model(**batch_dict)
+        embeddings = average_pool(
+            outputs.last_hidden_state, batch_dict["attention_mask"]
+        )
+        embedding = embeddings[0].detach().numpy()
+    else:
+        embedding = (
+            client.embeddings.create(input=[text], model=model).data[0].embedding
+        )
     return embedding
