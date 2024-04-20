@@ -119,7 +119,6 @@ def dump(user_id, real_name, last_dump, dump_file):
 
     # 既存のtsを取得
     existing_ts = {item["ts"] for item in db.search(Thread.ts.exists())}
-    print(existing_ts)
     print("スレッドのメッセージを取得しています。")
     for message in tqdm(all_messages, total=message_len):
         url = message["permalink"]
