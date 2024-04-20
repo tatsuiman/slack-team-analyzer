@@ -117,6 +117,9 @@ def dump(user_id, real_name, last_dump, dump_file):
     all_messages = fetch_user_messages(user_id, last_dump)
     message_len = len(all_messages)
 
+    # 既存のtsを取得
+    existing_ts = {item["ts"] for item in db.search(Thread.ts.exists())}
+    print(existing_ts)
     print("スレッドのメッセージを取得しています。")
     for message in tqdm(all_messages, total=message_len):
         url = message["permalink"]
@@ -125,6 +128,9 @@ def dump(user_id, real_name, last_dump, dump_file):
         message["channel_id"] = channel_id
         message["thread_users"] = [message["user"]]
         ts = message["ts"]
+        # 既存のtsの場合はスキップする
+        if ts in existing_ts:
+            continue
         try:
             reply_messages = fetch_replies(channel_id, thread_ts)
         except SlackApiError as e:
